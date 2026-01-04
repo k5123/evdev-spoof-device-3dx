@@ -78,7 +78,7 @@ eventLUT = { #this maps incoming events to outgoing events by changing their cod
 
 if not ecodes.EV_ABS in device.capabilities():
     # 3d space mouse reports only relative axes, so we need to set up absolute ones
-    axisInfo = AbsInfo(value=350, min=0, max=700, fuzz=0, flat=0, resolution=0)
+    axisInfo = AbsInfo(value=0, min=-32768, max=32768, fuzz=1024, flat=8192, resolution=0)
     caps[ecodes.EV_ABS] = [
         (ecodes.ABS_X, axisInfo),
         (ecodes.ABS_Y, axisInfo),
@@ -106,7 +106,9 @@ for event in device.read_loop():
     if event.type == ecodes.EV_REL:
         event.type = ecodes.EV_ABS
         event.code = eventLUT[event.code]
-        event.value = event.value + 350
+        #event.value = event.value + 350
+        val = int((1 if event.value >= 0 else -1) * ((abs(event.value) / 350.0) ** 2) * 32678)
+        event.value = val
     if event.type == ecodes.EV_KEY:
         event.code = eventLUT[event.code] if event.code in eventLUT else event.code
 

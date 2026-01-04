@@ -1,7 +1,7 @@
 [Unit]
 # A short human readable title of the unit
 Description=Space Mouse Spoof service
-After=network.target
+Before=plasma-workspace.target
 
 
 [Service]
@@ -12,11 +12,11 @@ After=network.target
 # Consult the documentantion for types (https://www.freedesktop.org/software/systemd/man/systemd.service.html#Type=) other options.
 Type=simple
 # Command with arguments to invoke when the unit is activated.
-ExecStart=/usr/bin/python ./spoof-device.py "3Dconnexion SpaceMouse Pro"
-WorkingDirectory=/home/r00t/dev/evdev-spoof-device-3dx
+ExecStart=/usr/bin/python /mnt/devel/evdev-spoof-device-3dx/spoof-device.py "3Dconnexion SpaceMouse Pro"
+WorkingDirectory=/mnt/devel/evdev-spoof-device-3dx
 # Configures under what conditions the unit will be restarted.
 Restart=no
 
 [Install]
 # A list of units who when activated will try and activate this unit
-WantedBy=multi-user.target
+WantedBy=default.target
