@@ -40,11 +40,12 @@ caps = { #this won't work: device.capabilities()
     ecodes.EV_MSC : [ecodes.MSC_SCAN]
 }
 
+#NOTE: For SC, this works only if SDL is ENABLED in the Controllers dialog in Wine. However, do NOT use buttons in the range 0x130-0x13c, as this triggers a hardcoded gamepad layout.
 caps[ecodes.EV_KEY] = [ #caps for key codes we send. refer to map below!
-    ecodes.BTN_JOYSTICK, ecodes.BTN_TRIGGER, BTN_MISC,
+    ecodes.BTN_JOYSTICK, ecodes.BTN_TRIGGER,
     ecodes.BTN_0, ecodes.BTN_1, ecodes.BTN_2, ecodes.BTN_3,
     ecodes.BTN_4, ecodes.BTN_5, ecodes.BTN_6, ecodes.BTN_7, ecodes.BTN_8, ecodes.BTN_9,
-    ecodes.BTN_X, ecodes.BTN_Y, #ecodes.BTN_A
+    ecodes.BTN_TRIGGER_HAPPY1, ecodes.BTN_TRIGGER_HAPPY2, ecodes.BTN_TRIGGER_HAPPY3, ecodes.BTN_TRIGGER_HAPPY4
 ]
 
 eventLUT = { #this maps incoming events to outgoing events by changing their code.
@@ -67,13 +68,13 @@ eventLUT = { #this maps incoming events to outgoing events by changing their cod
     281: ecodes.BTN_6, #7
     279: ecodes.BTN_7, #8
 
-    256: ecodes.BTN_A, #A?
-    257: ecodes.BTN_JOYSTICK, #B?
+    256: ecodes.BTN_TRIGGER_HAPPY1, #A?
+    257: ecodes.BTN_TRIGGER_HAPPY2, #B?
 
     264: ecodes.BTN_8, #9
-    258: ecodes.BTN_Y, #?
+    258: ecodes.BTN_TRIGGER_HAPPY3, #?
     261: ecodes.BTN_9, #10
-    260: ecodes.BTN_X #?
+    260: ecodes.BTN_TRIGGER_HAPPY4 #?
 }
 
 if not ecodes.EV_ABS in device.capabilities():
@@ -85,7 +86,8 @@ if not ecodes.EV_ABS in device.capabilities():
         (ecodes.ABS_Z, axisInfo),
         (ecodes.ABS_RX, axisInfo),
         (ecodes.ABS_RY, axisInfo),
-        (ecodes.ABS_RZ, axisInfo)
+        (ecodes.ABS_RZ, axisInfo),
+        (ecodes.ABS_GAS, axisInfo)
     ]
 
 try:
@@ -101,16 +103,21 @@ except Exception as e:
 print("Spoofing:", spoofdevice)
 print("Mirroring events...")
 
-for event in device.read_loop():
-    #print(event)
-    if event.type == ecodes.EV_REL:
-        event.type = ecodes.EV_ABS
-        event.code = eventLUT[event.code]
-        #event.value = event.value + 350
-        val = int((1 if event.value >= 0 else -1) * ((abs(event.value) / 350.0) ** 2) * 32678)
-        event.value = val
-    if event.type == ecodes.EV_KEY:
-        event.code = eventLUT[event.code] if event.code in eventLUT else event.code
+try:
+    for event in device.read_loop():
+        #print(event)
+        if event.type == ecodes.EV_REL:
+            event.type = ecodes.EV_ABS
+            event.code = eventLUT[event.code]
+            #event.value = event.value + 350
+            val = int((1 if event.value >= 0 else -1) * ((abs(event.value) / 350.0) ** 2) * 32678)
+            event.value = val
+        if event.type == ecodes.EV_KEY:
+            event.code = eventLUT[event.code] if event.code in eventLUT else event.code
 
-    spoofdevice.write_event(event)
-    spoofdevice.syn()
+        spoofdevice.write_event(event)
+        spoofdevice.syn()
+except KeyboardInterrupt:
+    print("Shutting down...")
+finally:
+    spoofdevice.close()
